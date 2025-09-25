@@ -2,12 +2,22 @@ import createHttpError from 'http-errors';
 import * as contactServices from '../services/contacts.js';
 
 export const getAllContactsController = async (req, res) => {
-  const contacts = await contactServices.getAllContacts();
+  const { page, perPage } = req.pagination;
+  const { sortBy, sortOrder } = req.sort;
+  const filter = req.filter;
+
+  const paginationContacts = await contactServices.getAllContacts({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filter,
+  });
 
   res.status(200).json({
     status: 200,
     message: 'Successfully found contacts!',
-    data: contacts,
+    data: paginationContacts,
   });
 };
 

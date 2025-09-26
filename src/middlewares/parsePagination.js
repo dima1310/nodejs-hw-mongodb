@@ -5,7 +5,7 @@ export const parsePagination = (req, res, next) => {
     sortBy = 'name',
     sortOrder = 'asc',
     type,
-    isFavorite,
+    isFavourite,
   } = req.query;
 
   const parsedPage = parseInt(page, 10);
@@ -33,10 +33,10 @@ export const parsePagination = (req, res, next) => {
     filter.contactType = type;
   }
 
-  if (isFavorite !== undefined) {
-    if (isFavorite == 'true' || isFavorite == '1') {
+  if (isFavourite !== undefined) {
+    if (isFavourite == 'true' || isFavourite == '1') {
       filter.isFavorite = true;
-    } else if (isFavorite == 'false' || isFavorite == '0') {
+    } else if (isFavourite == 'false' || isFavourite == '0') {
       filter.isFavorite = false;
     }
   }
@@ -50,6 +50,8 @@ export const parsePagination = (req, res, next) => {
     sortBy: validSortBy,
     sortOrder: validSortOrder,
   };
+
+  req.filter = filter;
 
   next();
 };

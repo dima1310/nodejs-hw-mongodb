@@ -13,10 +13,11 @@ import {
   createContactSchema,
   updateContactSchema,
 } from '../validation/contacts.js';
+import { parsePagination } from '../middlewares/parsePagination.js';
 
 const contactsRouter = Router();
 
-contactsRouter.get('/', ctrlWrapper(getAllContactsController));
+contactsRouter.get('/', parsePagination, ctrlWrapper(getAllContactsController));
 
 contactsRouter.get(
   '/:contactId',

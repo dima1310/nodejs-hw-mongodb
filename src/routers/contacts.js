@@ -17,7 +17,12 @@ import { parsePagination } from '../middlewares/parsePagination.js';
 
 const contactsRouter = Router();
 
-contactsRouter.get('/', parsePagination, ctrlWrapper(getAllContactsController));
+contactsRouter.get(
+  '/',
+  parsePagination,
+  validateBody(createContactSchema),
+  ctrlWrapper(getAllContactsController),
+);
 
 contactsRouter.get(
   '/:contactId',

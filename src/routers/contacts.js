@@ -14,8 +14,12 @@ import {
   updateContactSchema,
 } from '../validation/contacts.js';
 import { parsePagination } from '../middlewares/parsePagination.js';
+import router from './auth.js';
+import { authenticate } from '../middlewares/authenticate.js';
 
 const contactsRouter = Router();
+
+router.use(authenticate);
 
 contactsRouter.get(
   '/',

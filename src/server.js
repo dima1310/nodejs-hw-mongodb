@@ -30,7 +30,8 @@ export const startServer = () => {
     });
   });
 
-  app.use('/contacts', contactsRouter, authRouter);
+  app.use('/contacts', contactsRouter);
+  app.use('/auth', authRouter);
 
   app.use(notFoundHandler);
 

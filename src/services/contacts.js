@@ -12,7 +12,7 @@ export const getAllContacts = async (options = {}) => {
   const skip = (page - 1) * perPage;
 
   const sortOptions = {};
-  sortOptions[sortBy] = sortOrder == 'desc' ? -1 : 1;
+  sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const contacts = await contactCollection
     .find(filter)
@@ -38,13 +38,11 @@ export const getAllContacts = async (options = {}) => {
 };
 
 export const getContactById = async (contactId, ownerId) => {
-  const contact = await contactCollection.findOne(contactId, ownerId);
-  return contact;
+  return contactCollection.findOne({ _id: contactId, ownerId });
 };
 
 export const createContact = async (payload, ownerId) => {
-  const contact = await contactCollection.create(payload, ownerId);
-  return contact;
+  return contactCollection.create({ ...payload, ownerId });
 };
 
 export const updateContact = async (
@@ -54,9 +52,8 @@ export const updateContact = async (
   options = {},
 ) => {
   const rawResult = await contactCollection.findOneAndUpdate(
-    { _id: contactId },
+    { _id: contactId, ownerId },
     payload,
-    ownerId,
     {
       new: true,
       includeResultMetadata: true,
@@ -73,9 +70,5 @@ export const updateContact = async (
 };
 
 export const deleteContact = async (contactId, ownerId) => {
-  const contact = await contactCollection.findOneAndDelete({
-    _id: contactId,
-    ownerId,
-  });
-  return contact;
+  return contactCollection.findOneAndDelete({ _id: contactId, ownerId });
 };

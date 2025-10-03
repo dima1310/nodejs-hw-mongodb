@@ -30,7 +30,7 @@ export const loginUserController = async (req, res, next) => {
     res.cookie('refreshToken', session.refreshToken, {
       httpOnly: true,
       expires: session.refreshTokenValidUntil,
-      secure: process.env.NODE_ENV == 'production',
+      secure: process.env.NODE_ENV ==='production',
       sameSize: 'strict',
     });
 
@@ -55,7 +55,7 @@ export const refreshSessionController = async (req, res, next) => {
     res.cookie('refreshToken', session.refreshToken, {
       httpOnly: true,
       expires: session.refreshTokenValidUntil,
-      secure: process.env.NODE_ENV == 'production',
+      secure: process.env.NODE_ENV === 'production',
       sameSize: 'strict',
     });
 

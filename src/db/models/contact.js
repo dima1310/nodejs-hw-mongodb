@@ -23,7 +23,7 @@ const contactSchema = new Schema(
       required: true,
       default: 'personal',
     },
-    ownerId: {
+    userId: {
       type: new Schema.Types.ObjectId(),
       required: true,
     },

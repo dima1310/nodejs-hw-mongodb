@@ -41,7 +41,7 @@ export const authenticate = async (req, res, next) => {
 
     next();
   } catch (error) {
-      console.error('Authentication:', error);
-    next(createHttpError(401, 'Ucauthorized'));
+    console.error('Authentication:', error);
+    next(createHttpError(401, 'Unauthorized'));
   }
 };

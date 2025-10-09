@@ -6,6 +6,7 @@ import {
   updateContactController,
   deleteContactController,
 } from '../controllers/contacts.js';
+import { upload } from '../middlewares/upload.js';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { validateBody } from '../middlewares/validateBody.js';
 import { isValidId } from '../middlewares/isValidId.js';
@@ -35,12 +36,14 @@ contactsRouter.get(
 
 contactsRouter.post(
   '/',
+  upload.single('photo'),
   validateBody(createContactSchema),
   ctrlWrapper(createContactController),
 );
 
 contactsRouter.patch(
   '/:contactId',
+  upload.single('photo'),
   isValidId('contactId'),
   validateBody(updateContactSchema),
   ctrlWrapper(updateContactController),

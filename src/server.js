@@ -6,11 +6,22 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
 import cookieParser from 'cookie-parser';
 import contactsRouter from './routers/contacts.js';
+import { TEMP_UPLOAD_DIR } from './constants/index.js';
+import fs from "fs/promises";
 
 const PORT = Number(process.env.PORT) || 3000;
 
 export const startServer = () => {
   const app = express();
+
+  const createTempDir = async () => {
+    try {
+      await fs.access(TEMP_UPLOAD_DIR);
+    } catch {
+      await fs.mkdir(TEMP_UPLOAD_DIR, { recursive: true });
+    }
+  };
+  createTempDir();
 
   app.use(express.json());
   app.use(cors());

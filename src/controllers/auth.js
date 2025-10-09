@@ -3,6 +3,8 @@ import {
   loginUser,
   refreshSession,
   logoutUser,
+  sendResetEmailService,
+  resetPasswordService,
 } from '../services/auth.js';
 
 export const registerUserController = async (req, res, next) => {
@@ -30,7 +32,7 @@ export const loginUserController = async (req, res, next) => {
     res.cookie('refreshToken', session.refreshToken, {
       httpOnly: true,
       expires: session.refreshTokenValidUntil,
-      secure: process.env.NODE_ENV ==='production',
+      secure: process.env.NODE_ENV === 'production',
       sameSize: 'strict',
     });
 
@@ -80,6 +82,32 @@ export const logoutUserController = async (req, res, next) => {
     res.clearCookie('refreshToken');
 
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendResetEmail = async (req, res, next) => {
+  try {
+    await sendResetEmailService(req.body.email);
+    res.status(200).json({
+      status: 200,
+      message: 'Reset password email has been successfully sent.',
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    await resetPasswordService(req.body);
+    res.status(200).json({
+      status: 200,
+      message: 'Password has been successfully reset',
+      data: {},
+    });
   } catch (error) {
     next(error);
   }

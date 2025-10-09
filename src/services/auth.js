@@ -1,7 +1,9 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import createHttpError from 'http-errors';
+import jwt from 'jsonwebtoken';
 import { User, Session } from '../db/models/user.js';
+import { sendEmail } from '../utils/sendEmail.js';
 
 export const registerUser = async ({ name, email, password }) => {
   const existingUser = await User.findOne({ email });
@@ -111,4 +113,57 @@ export const logoutUser = async (refreshToken) => {
   }
 
   await Session.deleteOne({ _id: session._id });
+};
+
+export const sendResetEmailService = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw createHttpError(404, 'User not found');
+  }
+  const resetToken = jwt.sign({ email }, process.env.JWT_SECRET, {
+    expiresIn: '5m',
+  });
+
+  const resetLink = `${process.env.APP_DOMAIN}/reset-password?token=${resetToken}`;
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: 'Password Reset Request',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Password Reset Request</h2>
+          <p>You requested to reset your password. Click the link below to reset it:</p>
+          <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+          <p style="margin-top: 20px;">This link will expire in 5 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+  } catch {
+    throw createHttpError(
+      500,
+      'Failed to send the email, please try again later.',
+    );
+  }
+};
+
+export const resetPasswordService = async ({ token, password }) => {
+  let decoded;
+
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    throw createHttpError(401, 'Token is expired or invalid.');
+  }
+
+  const user = await User.findOne({ email: decoded.email });
+  if (!user) {
+    throw createHttpError(404, 'User not found!');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await User.findByIdAndUpdate(user._id, { password: hashedPassword });
+
+  await Session.deleteOne({ userId: user._id });
 };

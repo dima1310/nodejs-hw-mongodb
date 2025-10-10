@@ -1,5 +1,5 @@
 import createHttpError from 'http-errors';
-import { contactCollection } from '../db/models/contact.js';
+import { contact } from '../db/models/contact.js';
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -19,13 +19,13 @@ export const getAllContacts = async (options = {}) => {
   const sortOptions = {};
   sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-  const contacts = await contactCollection
+  const contacts = await contact
     .find(filter)
     .sort(sortOptions)
     .skip(skip)
     .limit(perPage);
 
-  const totalItems = await contactCollection.countDocuments(filter);
+  const totalItems = await contact.countDocuments(filter);
 
   const totalPages = Math.ceil(totalItems / perPage);
   const hasPreviousPage = page > 1;
@@ -43,15 +43,15 @@ export const getAllContacts = async (options = {}) => {
 };
 
 export const getContactById = async (contactId, userId) => {
-  return contactCollection.findOne({ _id: contactId, userId });
+  return contact.findOne({ _id: contactId, userId });
 };
 
 export const createContact = async (payload, userId, file) => {
   let photoUrl = null;
   if (file) {
-    photoUrl = await uploadToCloudinary(file.patch);
+    photoUrl = await uploadToCloudinary(file.path);
   }
-  return contactCollection.create({ ...payload, userId, photo: photoUrl });
+  return contact.create({ ...payload, userId, photo: photoUrl });
 };
 
 export const updateContact = async (
@@ -61,17 +61,17 @@ export const updateContact = async (
   file,
   options = {},
 ) => {
-  if (!contactCollection) {
+  if (!contact) {
     throw createHttpError(404, 'Contact not found');
   }
-  let photoUrl = contactCollection.photo;
+  let photoUrl = contact.photo;
   if (file) {
-    if (contactCollection.photo) {
-      await deleteFromCloudinary(contactCollection.photo);
+    if (contact.photo) {
+      await deleteFromCloudinary(contact.photo);
     }
-    photoUrl = await uploadToCloudinary(file.patch);
+    photoUrl = await uploadToCloudinary(file.path);
   }
-  const rawResult = await contactCollection.findOneAndUpdate(
+  const rawResult = await contact.findOneAndUpdate(
     { _id: contactId, userId },
     { ...payload, photo: photoUrl },
     {
@@ -90,11 +90,11 @@ export const updateContact = async (
 };
 
 export const deleteContact = async (contactId, userId) => {
-  if (!contactCollection) {
+  if (!contact) {
     throw createHttpError(404, 'Contact not found');
   }
-  if (contactCollection.photo) {
-    await deleteFromCloudinary(contactCollection.photo);
+  if (contact.photo) {
+    await deleteFromCloudinary(contact.photo);
   }
-  return contactCollection.findOneAndDelete({ _id: contactId, userId });
+  return contact.findOneAndDelete({ _id: contactId, userId });
 };

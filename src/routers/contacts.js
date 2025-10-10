@@ -21,12 +21,7 @@ const contactsRouter = Router();
 
 contactsRouter.use(authenticate);
 
-contactsRouter.get(
-  '/',
-  parsePagination,
-  validateBody(createContactSchema),
-  ctrlWrapper(getAllContactsController),
-);
+contactsRouter.get('/', parsePagination, ctrlWrapper(getAllContactsController));
 
 contactsRouter.get(
   '/:contactId',

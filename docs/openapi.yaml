@@ -17,7 +17,7 @@ tags:
 servers:
   - url: http://localhost:3000
     description: Local development server
-  - url: https://your-app.onrender.com
+  - url: https://nodejs-hw-mongodb-5-6hh1.onrender.com
     description: Production server
 
 paths:

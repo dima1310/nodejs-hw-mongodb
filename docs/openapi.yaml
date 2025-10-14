@@ -1,0 +1,787 @@
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Contacts API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: |
+    API для управління контактами з можливістю аутентифікації, завантаження фото та скидання пароля.
+
+tags:
+  - name: Auth
+    description: Операції аутентифікації та управління сесіями
+  - name: Contacts
+    description: Операції з контактами (CRUD)
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://your-app.onrender.com
+    description: Production server
+
+paths:
+  # ============================================
+  # CONTACTS ENDPOINTS
+  # ============================================
+
+  /contacts:
+    # ==========================================
+    # GET /contacts - Отримати список контактів
+    # ==========================================
+    get:
+      tags:
+        - Contacts
+      summary: Отримати список контактів
+      operationId: getContacts
+      description: |
+        Повертає список контактів користувача з підтримкою пагінації, фільтрації та сортування.
+
+        **Можливості:**
+        - Пагінація результатів
+        - Фільтрація за типом контакту (work, home, personal)
+        - Фільтрація за обраними контактами
+        - Сортування за будь-яким полем
+        - Ascending/Descending порядок сортування
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Номер сторінки для пагінації
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: perPage
+          in: query
+          required: false
+          description: Кількість контактів на одній сторінці
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+        - name: sortBy
+          in: query
+          required: false
+          description: Поле для сортування
+          schema:
+            type: string
+            enum:
+              [
+                name,
+                email,
+                phoneNumber,
+                contactType,
+                isFavourite,
+                createdAt,
+                updatedAt,
+              ]
+            default: name
+            example: name
+        - name: sortOrder
+          in: query
+          required: false
+          description: Порядок сортування
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+            example: asc
+        - name: contactType
+          in: query
+          required: false
+          description: Фільтр за типом контакту
+          schema:
+            type: string
+            enum: [work, home, personal]
+            example: work
+        - name: isFavourite
+          in: query
+          required: false
+          description: Фільтр за обраними контактами
+          schema:
+            type: boolean
+            example: true
+      responses:
+        '200':
+          description: Список контактів успішно отримано
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Successfully found contacts!'
+                  data:
+                    type: object
+                    required:
+                      - data
+                      - page
+                      - perPage
+                      - totalItems
+                      - totalPages
+                      - hasPreviousPage
+                      - hasNextPage
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Contact'
+                      page:
+                        type: integer
+                        description: Поточна сторінка
+                        example: 1
+                      perPage:
+                        type: integer
+                        description: Кількість елементів на сторінці
+                        example: 10
+                      totalItems:
+                        type: integer
+                        description: Загальна кількість контактів
+                        example: 25
+                      totalPages:
+                        type: integer
+                        description: Загальна кількість сторінок
+                        example: 3
+                      hasPreviousPage:
+                        type: boolean
+                        description: Чи є попередня сторінка
+                        example: false
+                      hasNextPage:
+                        type: boolean
+                        description: Чи є наступна сторінка
+                        example: true
+              examples:
+                withContacts:
+                  summary: Список з контактами
+                  value:
+                    status: 200
+                    message: 'Successfully found contacts!'
+                    data:
+                      data:
+                        - _id: '65e4decdd286b30065d54af9'
+                          name: 'John Doe'
+                          phoneNumber: '+380123456789'
+                          email: 'john@example.com'
+                          isFavourite: true
+                          contactType: 'work'
+                          photo: 'https://res.cloudinary.com/demo/image/upload/contacts/john.jpg'
+                          userId: '65e4decdd286b30065d54af8'
+                          createdAt: '2024-03-15T10:30:00.000Z'
+                          updatedAt: '2024-03-15T10:30:00.000Z'
+                        - _id: '65e4decdd286b30065d54afa'
+                          name: 'Jane Smith'
+                          phoneNumber: '+380987654321'
+                          email: null
+                          isFavourite: false
+                          contactType: 'personal'
+                          photo: null
+                          userId: '65e4decdd286b30065d54af8'
+                          createdAt: '2024-03-16T14:20:00.000Z'
+                          updatedAt: '2024-03-16T14:20:00.000Z'
+                      page: 1
+                      perPage: 10
+                      totalItems: 25
+                      totalPages: 3
+                      hasPreviousPage: false
+                      hasNextPage: true
+                emptyList:
+                  summary: Порожній список
+                  value:
+                    status: 200
+                    message: 'Successfully found contacts!'
+                    data:
+                      data: []
+                      page: 1
+                      perPage: 10
+                      totalItems: 0
+                      totalPages: 0
+                      hasPreviousPage: false
+                      hasNextPage: false
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    # ==========================================
+    # POST /contacts - Створити новий контакт
+    # ==========================================
+    post:
+      tags:
+        - Contacts
+      summary: Створити новий контакт
+      operationId: createContact
+      description: |
+        Створює новий контакт для авторизованого користувача.
+
+        **Можливості:**
+        - Завантаження фотографії контакту на Cloudinary
+        - Підтримка форматів: JPEG, PNG, GIF, WebP
+        - Максимальний розмір файлу: 5MB
+        - Всі поля крім photo є обов'язковими
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - phoneNumber
+                - contactType
+              properties:
+                name:
+                  type: string
+                  description: Повне ім'я контакту
+                  minLength: 3
+                  maxLength: 100
+                  example: 'John Doe'
+                phoneNumber:
+                  type: string
+                  description: Номер телефону в міжнародному форматі
+                  pattern: '^\+?[1-9]\d{1,14}$'
+                  example: '+380123456789'
+                email:
+                  type: string
+                  format: email
+                  description: Email адреса (необов'язкове)
+                  example: 'john.doe@example.com'
+                isFavourite:
+                  type: boolean
+                  description: Чи є контакт обраним
+                  default: false
+                  example: false
+                contactType:
+                  type: string
+                  enum: [work, home, personal]
+                  description: Тип контакту
+                  default: personal
+                  example: 'personal'
+                photo:
+                  type: string
+                  format: binary
+                  description: |
+                    Фотографія контакту
+
+                    **Підтримувані формати:** JPEG, PNG, GIF, WebP
+                    **Максимальний розмір:** 5MB
+            encoding:
+              photo:
+                contentType: image/jpeg, image/png, image/gif, image/webp
+      responses:
+        '201':
+          description: Контакт успішно створено
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: 'Successfully created a contact!'
+                  data:
+                    $ref: '#/components/schemas/Contact'
+              examples:
+                withPhoto:
+                  summary: Контакт з фотографією
+                  value:
+                    status: 201
+                    message: 'Successfully created a contact!'
+                    data:
+                      _id: '65e4decdd286b30065d54af9'
+                      name: 'John Doe'
+                      phoneNumber: '+380123456789'
+                      email: 'john.doe@example.com'
+                      isFavourite: false
+                      contactType: 'work'
+                      photo: 'https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/photo.jpg'
+                      userId: '65e4decdd286b30065d54af8'
+                      createdAt: '2024-03-15T10:30:00.000Z'
+                      updatedAt: '2024-03-15T10:30:00.000Z'
+                withoutPhoto:
+                  summary: Контакт без фотографії
+                  value:
+                    status: 201
+                    message: 'Successfully created a contact!'
+                    data:
+                      _id: '65e4decdd286b30065d54af9'
+                      name: 'Jane Smith'
+                      phoneNumber: '+380987654321'
+                      email: null
+                      isFavourite: true
+                      contactType: 'personal'
+                      photo: null
+                      userId: '65e4decdd286b30065d54af8'
+                      createdAt: '2024-03-15T10:30:00.000Z'
+                      updatedAt: '2024-03-15T10:30:00.000Z'
+        '400':
+          description: Помилка валідації даних
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                missingFields:
+                  summary: Відсутні обов'язкові поля
+                  value:
+                    status: 400
+                    message: 'Validation error'
+                    data:
+                      errors:
+                        - field: 'name'
+                          message: 'Name is required'
+                        - field: 'phoneNumber'
+                          message: 'Phone number is required'
+                invalidEmail:
+                  summary: Невалідний email
+                  value:
+                    status: 400
+                    message: 'Validation error'
+                    data:
+                      errors:
+                        - field: 'email'
+                          message: 'Invalid email format'
+                invalidFileType:
+                  summary: Невалідний тип файлу
+                  value:
+                    status: 400
+                    message: 'Invalid file type. Only JPEG, PNG, GIF and WebP are allowed.'
+                fileTooLarge:
+                  summary: Файл занадто великий
+                  value:
+                    status: 400
+                    message: 'File size too large. Maximum size is 5MB.'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /contacts/{contactId}:
+    # ==========================================
+    # GET /contacts/:contactId - Отримати контакт
+    # ==========================================
+    get:
+      tags:
+        - Contacts
+      summary: Отримати контакт за ID
+      operationId: getContactById
+      description: |
+        Повертає детальну інформацію про конкретний контакт користувача за його унікальним ідентифікатором.
+
+        Контакт повинен належати авторизованому користувачу, інакше буде повернуто помилку 404.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ContactIdParam'
+      responses:
+        '200':
+          description: Контакт успішно знайдено
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Successfully found contact with id 65e4decdd286b30065d54af9!'
+                  data:
+                    $ref: '#/components/schemas/Contact'
+              examples:
+                withPhoto:
+                  summary: Контакт з фотографією
+                  value:
+                    status: 200
+                    message: 'Successfully found contact with id 65e4decdd286b30065d54af9!'
+                    data:
+                      _id: '65e4decdd286b30065d54af9'
+                      name: 'John Doe'
+                      phoneNumber: '+380123456789'
+                      email: 'john.doe@example.com'
+                      isFavourite: true
+                      contactType: 'work'
+                      photo: 'https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/john-doe.jpg'
+                      userId: '65e4decdd286b30065d54af8'
+                      createdAt: '2024-03-15T10:30:00.000Z'
+                      updatedAt: '2024-03-15T12:45:00.000Z'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    # ==========================================
+    # PATCH /contacts/:contactId - Оновити контакт
+    # ==========================================
+    patch:
+      tags:
+        - Contacts
+      summary: Оновити контакт
+      operationId: updateContact
+      description: |
+        Частково оновлює інформацію про контакт.
+
+        **Можливості:**
+        - Оновлення будь-яких полів контакту (всі поля опціональні)
+        - Завантаження нової фотографії
+        - Автоматичне видалення старої фотографії з Cloudinary при завантаженні нової
+        - Підтримка форматів фото: JPEG, PNG, GIF, WebP
+        - Максимальний розмір файлу: 5MB
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ContactIdParam'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Нове ім'я контакту
+                  minLength: 3
+                  maxLength: 100
+                  example: 'Jane Doe'
+                phoneNumber:
+                  type: string
+                  description: Новий номер телефону
+                  pattern: '^\+?[1-9]\d{1,14}$'
+                  example: '+380987654321'
+                email:
+                  type: string
+                  format: email
+                  description: Новий email
+                  example: 'jane.doe@example.com'
+                isFavourite:
+                  type: boolean
+                  description: Змінити статус обраного
+                  example: true
+                contactType:
+                  type: string
+                  enum: [work, home, personal]
+                  description: Новий тип контакту
+                  example: 'home'
+                photo:
+                  type: string
+                  format: binary
+                  description: |
+                    Нова фотографія контакту (стара буде видалена)
+
+                    **Підтримувані формати:** JPEG, PNG, GIF, WebP
+                    **Максимальний розмір:** 5MB
+            encoding:
+              photo:
+                contentType: image/jpeg, image/png, image/gif, image/webp
+      responses:
+        '200':
+          description: Контакт успішно оновлено
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Successfully patched a contact!'
+                  data:
+                    $ref: '#/components/schemas/Contact'
+              examples:
+                updatedWithNewPhoto:
+                  summary: Оновлено з новим фото
+                  value:
+                    status: 200
+                    message: 'Successfully patched a contact!'
+                    data:
+                      _id: '65e4decdd286b30065d54af9'
+                      name: 'John Doe Updated'
+                      phoneNumber: '+380999888777'
+                      email: 'john.updated@example.com'
+                      isFavourite: true
+                      contactType: 'work'
+                      photo: 'https://res.cloudinary.com/demo/image/upload/v1234567999/contacts/new-photo.jpg'
+                      userId: '65e4decdd286b30065d54af8'
+                      createdAt: '2024-03-15T10:30:00.000Z'
+                      updatedAt: '2024-03-16T15:45:00.000Z'
+                updatedPartial:
+                  summary: Часткове оновлення
+                  value:
+                    status: 200
+                    message: 'Successfully patched a contact!'
+                    data:
+                      _id: '65e4decdd286b30065d54af9'
+                      name: 'John Doe'
+                      phoneNumber: '+380123456789'
+                      email: 'john@example.com'
+                      isFavourite: true
+                      contactType: 'work'
+                      photo: 'https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/photo.jpg'
+                      userId: '65e4decdd286b30065d54af8'
+                      createdAt: '2024-03-15T10:30:00.000Z'
+                      updatedAt: '2024-03-16T16:30:00.000Z'
+        '400':
+          description: Помилка валідації даних
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    # ==========================================
+    # DELETE /contacts/:contactId - Видалити контакт
+    # ==========================================
+    delete:
+      tags:
+        - Contacts
+      summary: Видалити контакт
+      operationId: deleteContact
+      description: |
+        Видаляє контакт користувача назавжди.
+
+        **Важливо:**
+        - Контакт буде повністю видалений з бази даних
+        - Якщо контакт має фотографію, вона також буде видалена з Cloudinary
+        - Операцію неможливо скасувати
+        - Контакт повинен належати авторизованому користувачу
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ContactIdParam'
+      responses:
+        '204':
+          description: |
+            Контакт успішно видалено
+
+            Тіло відповіді порожнє при успішному видаленні
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+# ============================================
+# COMPONENTS
+# ============================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT токен для авторизації. Отримайте токен після успішного логіну через `/auth/login`.
+
+        **Формат заголовка:**
+        ```
+        Authorization: Bearer <your-access-token>
+        ```
+
+        **Приклад:**
+        ```
+        Authorization: Bearer dGVzdC10b2tlbg==
+        ```
+
+  parameters:
+    ContactIdParam:
+      name: contactId
+      in: path
+      required: true
+      description: |
+        Унікальний ідентифікатор контакту (MongoDB ObjectId).
+
+        Формат: 24 шістнадцяткові символи (0-9, a-f)
+      schema:
+        type: string
+        pattern: '^[0-9a-fA-F]{24}$'
+        example: '65e4decdd286b30065d54af9'
+
+  schemas:
+    Contact:
+      type: object
+      required:
+        - _id
+        - name
+        - phoneNumber
+        - contactType
+        - userId
+        - createdAt
+        - updatedAt
+      properties:
+        _id:
+          type: string
+          description: Унікальний ідентифікатор контакту
+          example: '65e4decdd286b30065d54af9'
+        name:
+          type: string
+          description: Повне ім'я контакту
+          example: 'John Doe'
+        phoneNumber:
+          type: string
+          description: Номер телефону в міжнародному форматі
+          example: '+380123456789'
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email адреса (необов'язкове поле)
+          example: 'john.doe@example.com'
+        isFavourite:
+          type: boolean
+          description: Чи є контакт обраним
+          default: false
+          example: false
+        contactType:
+          type: string
+          enum: [work, home, personal]
+          description: |
+            Тип контакту:
+            - `work` - робочий контакт
+            - `home` - домашній контакт
+            - `personal` - особистий контакт
+          example: 'personal'
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          description: URL фотографії контакту на Cloudinary (може бути null)
+          example: 'https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/photo.jpg'
+        userId:
+          type: string
+          description: ID користувача-власника контакту
+          example: '65e4decdd286b30065d54af8'
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата та час створення контакту (ISO 8601)
+          example: '2024-03-15T10:30:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата та час останнього оновлення контакту (ISO 8601)
+          example: '2024-03-15T12:45:00.000Z'
+
+    ValidationError:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: 'Validation error'
+        data:
+          type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: 'email'
+                  message:
+                    type: string
+                    example: 'Invalid email format'
+
+  responses:
+    UnauthorizedError:
+      description: |
+        Помилка авторизації
+
+        **Можливі причини:**
+        - Відсутній заголовок Authorization
+        - Невалідний або просрочений токен
+        - Токен не належить до активної сесії
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 401
+              message:
+                type: string
+                example: 'Unauthorized'
+          examples:
+            missingToken:
+              summary: Токен відсутній
+              value:
+                status: 401
+                message: 'Unauthorized'
+            invalidToken:
+              summary: Невалідний токен
+              value:
+                status: 401
+                message: 'Unauthorized'
+
+    NotFoundError:
+      description: |
+        Контакт не знайдено
+
+        **Можливі причини:**
+        - Контакт з таким ID не існує
+        - Контакт не належить поточному користувачу
+        - Невалідний формат contactId
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - status
+              - message
+            properties:
+              status:
+                type: integer
+                example: 404
+              message:
+                type: string
+                example: 'Contact not found'
+              data:
+                type: object
+                nullable: true
+                example: null
+          examples:
+            notFound:
+              summary: Контакт не існує
+              value:
+                status: 404
+                message: 'Contact not found'
+                data: null

@@ -1,0 +1,966 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Contacts API",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "description": "API для управління контактами з можливістю аутентифікації, завантаження фото та скидання пароля.\n"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    },
+    {
+      "url": "https://your-app.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Операції аутентифікації та управління сесіями"
+    },
+    {
+      "name": "Contacts",
+      "description": "Операції з контактами (CRUD)"
+    }
+  ],
+  "paths": {
+    "/contacts": {
+      "get": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Отримати список контактів",
+        "operationId": "getContacts",
+        "description": "Повертає список контактів користувача з підтримкою пагінації, фільтрації та сортування.\n\n**Можливості:**\n- Пагінація результатів\n- Фільтрація за типом контакту (work, home, personal)\n- Фільтрація за обраними контактами\n- Сортування за будь-яким полем\n- Ascending/Descending порядок сортування\n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Номер сторінки для пагінації",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "required": false,
+            "description": "Кількість контактів на одній сторінці",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "description": "Поле для сортування",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "email",
+                "phoneNumber",
+                "contactType",
+                "isFavourite",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "name",
+              "example": "name"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "description": "Порядок сортування",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc",
+              "example": "asc"
+            }
+          },
+          {
+            "name": "contactType",
+            "in": "query",
+            "required": false,
+            "description": "Фільтр за типом контакту",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "work",
+                "home",
+                "personal"
+              ],
+              "example": "work"
+            }
+          },
+          {
+            "name": "isFavourite",
+            "in": "query",
+            "required": false,
+            "description": "Фільтр за обраними контактами",
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список контактів успішно отримано",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully found contacts!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "data",
+                        "page",
+                        "perPage",
+                        "totalItems",
+                        "totalPages",
+                        "hasPreviousPage",
+                        "hasNextPage"
+                      ],
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Contact"
+                          }
+                        },
+                        "page": {
+                          "type": "integer",
+                          "description": "Поточна сторінка",
+                          "example": 1
+                        },
+                        "perPage": {
+                          "type": "integer",
+                          "description": "Кількість елементів на сторінці",
+                          "example": 10
+                        },
+                        "totalItems": {
+                          "type": "integer",
+                          "description": "Загальна кількість контактів",
+                          "example": 25
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "description": "Загальна кількість сторінок",
+                          "example": 3
+                        },
+                        "hasPreviousPage": {
+                          "type": "boolean",
+                          "description": "Чи є попередня сторінка",
+                          "example": false
+                        },
+                        "hasNextPage": {
+                          "type": "boolean",
+                          "description": "Чи є наступна сторінка",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "withContacts": {
+                    "summary": "Список з контактами",
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully found contacts!",
+                      "data": {
+                        "data": [
+                          {
+                            "_id": "65e4decdd286b30065d54af9",
+                            "name": "John Doe",
+                            "phoneNumber": "+380123456789",
+                            "email": "john@example.com",
+                            "isFavourite": true,
+                            "contactType": "work",
+                            "photo": "https://res.cloudinary.com/demo/image/upload/contacts/john.jpg",
+                            "userId": "65e4decdd286b30065d54af8",
+                            "createdAt": "2024-03-15T10:30:00.000Z",
+                            "updatedAt": "2024-03-15T10:30:00.000Z"
+                          },
+                          {
+                            "_id": "65e4decdd286b30065d54afa",
+                            "name": "Jane Smith",
+                            "phoneNumber": "+380987654321",
+                            "email": null,
+                            "isFavourite": false,
+                            "contactType": "personal",
+                            "photo": null,
+                            "userId": "65e4decdd286b30065d54af8",
+                            "createdAt": "2024-03-16T14:20:00.000Z",
+                            "updatedAt": "2024-03-16T14:20:00.000Z"
+                          }
+                        ],
+                        "page": 1,
+                        "perPage": 10,
+                        "totalItems": 25,
+                        "totalPages": 3,
+                        "hasPreviousPage": false,
+                        "hasNextPage": true
+                      }
+                    }
+                  },
+                  "emptyList": {
+                    "summary": "Порожній список",
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully found contacts!",
+                      "data": {
+                        "data": [],
+                        "page": 1,
+                        "perPage": 10,
+                        "totalItems": 0,
+                        "totalPages": 0,
+                        "hasPreviousPage": false,
+                        "hasNextPage": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Створити новий контакт",
+        "operationId": "createContact",
+        "description": "Створює новий контакт для авторизованого користувача.\n\n**Можливості:**\n- Завантаження фотографії контакту на Cloudinary\n- Підтримка форматів: JPEG, PNG, GIF, WebP\n- Максимальний розмір файлу: 5MB\n- Всі поля крім photo є обов'язковими\n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "phoneNumber",
+                  "contactType"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Повне ім'я контакту",
+                    "minLength": 3,
+                    "maxLength": 100,
+                    "example": "John Doe"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "description": "Номер телефону в міжнародному форматі",
+                    "pattern": "^\\+?[1-9]\\d{1,14}$",
+                    "example": "+380123456789"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Email адреса (необов'язкове)",
+                    "example": "john.doe@example.com"
+                  },
+                  "isFavourite": {
+                    "type": "boolean",
+                    "description": "Чи є контакт обраним",
+                    "default": false,
+                    "example": false
+                  },
+                  "contactType": {
+                    "type": "string",
+                    "enum": [
+                      "work",
+                      "home",
+                      "personal"
+                    ],
+                    "description": "Тип контакту",
+                    "default": "personal",
+                    "example": "personal"
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Фотографія контакту\n\n**Підтримувані формати:** JPEG, PNG, GIF, WebP\n**Максимальний розмір:** 5MB\n"
+                  }
+                }
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/jpeg, image/png, image/gif, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Контакт успішно створено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 201
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully created a contact!"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Contact"
+                    }
+                  }
+                },
+                "examples": {
+                  "withPhoto": {
+                    "summary": "Контакт з фотографією",
+                    "value": {
+                      "status": 201,
+                      "message": "Successfully created a contact!",
+                      "data": {
+                        "_id": "65e4decdd286b30065d54af9",
+                        "name": "John Doe",
+                        "phoneNumber": "+380123456789",
+                        "email": "john.doe@example.com",
+                        "isFavourite": false,
+                        "contactType": "work",
+                        "photo": "https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/photo.jpg",
+                        "userId": "65e4decdd286b30065d54af8",
+                        "createdAt": "2024-03-15T10:30:00.000Z",
+                        "updatedAt": "2024-03-15T10:30:00.000Z"
+                      }
+                    }
+                  },
+                  "withoutPhoto": {
+                    "summary": "Контакт без фотографії",
+                    "value": {
+                      "status": 201,
+                      "message": "Successfully created a contact!",
+                      "data": {
+                        "_id": "65e4decdd286b30065d54af9",
+                        "name": "Jane Smith",
+                        "phoneNumber": "+380987654321",
+                        "email": null,
+                        "isFavourite": true,
+                        "contactType": "personal",
+                        "photo": null,
+                        "userId": "65e4decdd286b30065d54af8",
+                        "createdAt": "2024-03-15T10:30:00.000Z",
+                        "updatedAt": "2024-03-15T10:30:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Помилка валідації даних",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                },
+                "examples": {
+                  "missingFields": {
+                    "summary": "Відсутні обов'язкові поля",
+                    "value": {
+                      "status": 400,
+                      "message": "Validation error",
+                      "data": {
+                        "errors": [
+                          {
+                            "field": "name",
+                            "message": "Name is required"
+                          },
+                          {
+                            "field": "phoneNumber",
+                            "message": "Phone number is required"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "invalidEmail": {
+                    "summary": "Невалідний email",
+                    "value": {
+                      "status": 400,
+                      "message": "Validation error",
+                      "data": {
+                        "errors": [
+                          {
+                            "field": "email",
+                            "message": "Invalid email format"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "invalidFileType": {
+                    "summary": "Невалідний тип файлу",
+                    "value": {
+                      "status": 400,
+                      "message": "Invalid file type. Only JPEG, PNG, GIF and WebP are allowed."
+                    }
+                  },
+                  "fileTooLarge": {
+                    "summary": "Файл занадто великий",
+                    "value": {
+                      "status": 400,
+                      "message": "File size too large. Maximum size is 5MB."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/contacts/{contactId}": {
+      "get": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Отримати контакт за ID",
+        "operationId": "getContactById",
+        "description": "Повертає детальну інформацію про конкретний контакт користувача за його унікальним ідентифікатором.\n\nКонтакт повинен належати авторизованому користувачу, інакше буде повернуто помилку 404.\n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContactIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Контакт успішно знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully found contact with id 65e4decdd286b30065d54af9!"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Contact"
+                    }
+                  }
+                },
+                "examples": {
+                  "withPhoto": {
+                    "summary": "Контакт з фотографією",
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully found contact with id 65e4decdd286b30065d54af9!",
+                      "data": {
+                        "_id": "65e4decdd286b30065d54af9",
+                        "name": "John Doe",
+                        "phoneNumber": "+380123456789",
+                        "email": "john.doe@example.com",
+                        "isFavourite": true,
+                        "contactType": "work",
+                        "photo": "https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/john-doe.jpg",
+                        "userId": "65e4decdd286b30065d54af8",
+                        "createdAt": "2024-03-15T10:30:00.000Z",
+                        "updatedAt": "2024-03-15T12:45:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Оновити контакт",
+        "operationId": "updateContact",
+        "description": "Частково оновлює інформацію про контакт.\n\n**Можливості:**\n- Оновлення будь-яких полів контакту (всі поля опціональні)\n- Завантаження нової фотографії\n- Автоматичне видалення старої фотографії з Cloudinary при завантаженні нової\n- Підтримка форматів фото: JPEG, PNG, GIF, WebP\n- Максимальний розмір файлу: 5MB\n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContactIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Нове ім'я контакту",
+                    "minLength": 3,
+                    "maxLength": 100,
+                    "example": "Jane Doe"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "description": "Новий номер телефону",
+                    "pattern": "^\\+?[1-9]\\d{1,14}$",
+                    "example": "+380987654321"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Новий email",
+                    "example": "jane.doe@example.com"
+                  },
+                  "isFavourite": {
+                    "type": "boolean",
+                    "description": "Змінити статус обраного",
+                    "example": true
+                  },
+                  "contactType": {
+                    "type": "string",
+                    "enum": [
+                      "work",
+                      "home",
+                      "personal"
+                    ],
+                    "description": "Новий тип контакту",
+                    "example": "home"
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Нова фотографія контакту (стара буде видалена)\n\n**Підтримувані формати:** JPEG, PNG, GIF, WebP\n**Максимальний розмір:** 5MB\n"
+                  }
+                }
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/jpeg, image/png, image/gif, image/webp"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Контакт успішно оновлено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully patched a contact!"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Contact"
+                    }
+                  }
+                },
+                "examples": {
+                  "updatedWithNewPhoto": {
+                    "summary": "Оновлено з новим фото",
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully patched a contact!",
+                      "data": {
+                        "_id": "65e4decdd286b30065d54af9",
+                        "name": "John Doe Updated",
+                        "phoneNumber": "+380999888777",
+                        "email": "john.updated@example.com",
+                        "isFavourite": true,
+                        "contactType": "work",
+                        "photo": "https://res.cloudinary.com/demo/image/upload/v1234567999/contacts/new-photo.jpg",
+                        "userId": "65e4decdd286b30065d54af8",
+                        "createdAt": "2024-03-15T10:30:00.000Z",
+                        "updatedAt": "2024-03-16T15:45:00.000Z"
+                      }
+                    }
+                  },
+                  "updatedPartial": {
+                    "summary": "Часткове оновлення",
+                    "value": {
+                      "status": 200,
+                      "message": "Successfully patched a contact!",
+                      "data": {
+                        "_id": "65e4decdd286b30065d54af9",
+                        "name": "John Doe",
+                        "phoneNumber": "+380123456789",
+                        "email": "john@example.com",
+                        "isFavourite": true,
+                        "contactType": "work",
+                        "photo": "https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/photo.jpg",
+                        "userId": "65e4decdd286b30065d54af8",
+                        "createdAt": "2024-03-15T10:30:00.000Z",
+                        "updatedAt": "2024-03-16T16:30:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Помилка валідації даних",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Видалити контакт",
+        "operationId": "deleteContact",
+        "description": "Видаляє контакт користувача назавжди.\n\n**Важливо:**\n- Контакт буде повністю видалений з бази даних\n- Якщо контакт має фотографію, вона також буде видалена з Cloudinary\n- Операцію неможливо скасувати\n- Контакт повинен належати авторизованому користувачу\n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContactIdParam"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Контакт успішно видалено\n\nТіло відповіді порожнє при успішному видаленні\n"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT токен для авторизації. Отримайте токен після успішного логіну через `/auth/login`.\n\n**Формат заголовка:**\n```\nAuthorization: Bearer <your-access-token>\n```\n\n**Приклад:**\n```\nAuthorization: Bearer dGVzdC10b2tlbg==\n```\n"
+      }
+    },
+    "parameters": {
+      "ContactIdParam": {
+        "name": "contactId",
+        "in": "path",
+        "required": true,
+        "description": "Унікальний ідентифікатор контакту (MongoDB ObjectId).\n\nФормат: 24 шістнадцяткові символи (0-9, a-f)\n",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$",
+          "example": "65e4decdd286b30065d54af9"
+        }
+      }
+    },
+    "schemas": {
+      "Contact": {
+        "type": "object",
+        "required": [
+          "_id",
+          "name",
+          "phoneNumber",
+          "contactType",
+          "userId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Унікальний ідентифікатор контакту",
+            "example": "65e4decdd286b30065d54af9"
+          },
+          "name": {
+            "type": "string",
+            "description": "Повне ім'я контакту",
+            "example": "John Doe"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Номер телефону в міжнародному форматі",
+            "example": "+380123456789"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Email адреса (необов'язкове поле)",
+            "example": "john.doe@example.com"
+          },
+          "isFavourite": {
+            "type": "boolean",
+            "description": "Чи є контакт обраним",
+            "default": false,
+            "example": false
+          },
+          "contactType": {
+            "type": "string",
+            "enum": [
+              "work",
+              "home",
+              "personal"
+            ],
+            "description": "Тип контакту:\n- `work` - робочий контакт\n- `home` - домашній контакт\n- `personal` - особистий контакт\n",
+            "example": "personal"
+          },
+          "photo": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL фотографії контакту на Cloudinary (може бути null)",
+            "example": "https://res.cloudinary.com/demo/image/upload/v1234567890/contacts/photo.jpg"
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID користувача-власника контакту",
+            "example": "65e4decdd286b30065d54af8"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата та час створення контакту (ISO 8601)",
+            "example": "2024-03-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата та час останнього оновлення контакту (ISO 8601)",
+            "example": "2024-03-15T12:45:00.000Z"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation error"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "example": "email"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid email format"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Помилка авторизації\n\n**Можливі причини:**\n- Відсутній заголовок Authorization\n- Невалідний або просрочений токен\n- Токен не належить до активної сесії\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 401
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Unauthorized"
+                }
+              }
+            },
+            "examples": {
+              "missingToken": {
+                "summary": "Токен відсутній",
+                "value": {
+                  "status": 401,
+                  "message": "Unauthorized"
+                }
+              },
+              "invalidToken": {
+                "summary": "Невалідний токен",
+                "value": {
+                  "status": 401,
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Контакт не знайдено\n\n**Можливі причини:**\n- Контакт з таким ID не існує\n- Контакт не належить поточному користувачу\n- Невалідний формат contactId\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "status",
+                "message"
+              ],
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 404
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Contact not found"
+                },
+                "data": {
+                  "type": "object",
+                  "nullable": true,
+                  "example": null
+                }
+              }
+            },
+            "examples": {
+              "notFound": {
+                "summary": "Контакт не існує",
+                "value": {
+                  "status": 404,
+                  "message": "Contact not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

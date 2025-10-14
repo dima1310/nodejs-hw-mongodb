@@ -1,4 +1,5 @@
 import express from 'express';
+import { swaggerDocs } from '../src/middlewares/swaggerDocs.js';
 import cors from 'cors';
 import pino from 'pino-http';
 import authRouter from './routers/auth.js';
@@ -7,7 +8,7 @@ import { notFoundHandler } from './middlewares/notFoundHandler.js';
 import cookieParser from 'cookie-parser';
 import contactsRouter from './routers/contacts.js';
 import { TEMP_UPLOAD_DIR } from './constants/index.js';
-import fs from "fs/promises";
+import fs from 'fs/promises';
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -40,6 +41,8 @@ export const startServer = () => {
       message: 'Server is running',
     });
   });
+  app.use('/uploads', express.static(TEMP_UPLOAD_DIR));
+  app.use('/api-docs', swaggerDocs());
 
   app.use('/contacts', contactsRouter);
   app.use('/auth', authRouter);
